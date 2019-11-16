@@ -10,13 +10,13 @@
         }
     </style>
 </head>
-<body>
+<body style="background-color:black;">
 
 <script type="text/javascript">
     var config = {
         type: Phaser.AUTO,
-        width: 800,
-        height: 600,
+        width: 1440,
+        height: 900,
         scene: {
             preload: preload,
             create: create,
@@ -24,138 +24,322 @@
         }
     };
     var game = new Phaser.Game(config);
-    var rock = [];
+    var rocks = [];
     var star = [];
+    var missiles = [];
+    var pings = [];
+    var pongs = [];
+    var gCoupe;
+    var rCoupe;
+    var t;
+    var dt;
+    var date;
+
     function preload ()
     {
-        this.load.image('ship', 'assets/stark.png');
-        this.load.image('rock', 'assets/bomb.png');
-        this.load.image('star', 'assets/star.png');
+      this.load.image('coupe', 'assets/coupe.png');
+      this.load.image('rocks', 'assets/bomb.png');
+      this.load.image('star', 'assets/star.png');
+      this.load.image('missile', 'assets/missile.png');
+      this.load.spritesheet('asplode', 'assets/splode.png',{frameWidth: 32, frameHeight: 32, endFrame: 2 });
+
+
     }
 
     function create ()
     {
-
-      const pi = 3.141592653;
-
-      keys = this.input.keyboard;
-      keys.addKey("R");
-      keys.addKey("UP");
-      keys.addKey("LEFT");
-      keys.addKey("DOWN");
-      keys.addKey("RIGHT");
-      keys.addKey("NUMPAD_NINE");
-      keys.addKey("NUMPAD_THREE");
-      console.log(keys);
-      var ship = this.add.image(0,0, 'ship')
-      ship.rv=0.0;
-      ship.vx=0.0;
-      ship.vy=0.0;
-
-      var cam = this.cameras.main;
-      const mapEdge = 2000; //max x and y and negative for mins
-      cam.setBounds(-mapEdge, -mapEdge, mapEdge, mapEdge);
-      cam.startFollow(ship);
-
-
-
-      for (i=0; i<40; i++){
-        rock[i] = this.add.image(0,0, 'rock')
-        rock[i].rotation=Math.random()*2*pi;
-        rock[i].rv=(Math.random()-0.5)*0.02;
-        rock[i].x=Math.random()*800-400;
-        rock[i].y=Math.random()*600-300;
-        rock[i].vx=rock[i].y / 300 + (Math.random()-0.5)*0.02 ;
-        rock[i].vy= (Math.random()-0.5)*0.02 ;
+      var config = {
+        key: 'explode',
+        frames: this.anims.generateFrameNumbers('asplode', { start: 0, end: 2, first: 0 }),
+        frameRate: 12,
+        hideOnComplete: true
       }
+      this.anims.create(config);
+
+
+      pi = 3.141592653;
+      keys = this.input.keyboard.createCursorKeys();
+      PKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+      RKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+      PLUSKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PLUS);
+      MINUSKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.MINUS);
+
+      mapEdge = 2000; //max x and y and negative for mins
+      cam = this.cameras.main;
+      cam.followOffset.set(-100, -100);
+      cam.setBounds(-mapEdge, -mapEdge, 2*mapEdge, 2*mapEdge);
+      zoom = 1.0;
+
+      gCoupe = this.add.image(0,0, 'coupe')
+      gCoupe.player = 1;  //player controlled
+      gCoupe.rv=0.0;
+      gCoupe.vx=0.0;
+      gCoupe.vy=0.0;
+      gCoupe.setScale(0.5);
+      gCoupe.tint = 0x20ff20;  //bright green
+      gCoupe.mReady = true;
+      gCoupe.mTimer = 0;
+      gCoupe.pReady = true;
+      gCoupe.pTimer = 0;
+      cam.startFollow(gCoupe);
+
+      rCoupe = this.add.image(0,0, 'coupe')
+      rCoupe.player = 0;  // NPC
+      rCoupe.rv=0.0;
+      rCoupe.vx=0.0;
+      rCoupe.vy=0.0;
+      rCoupe.setScale(0.5);
+      rCoupe.tint = 0xff2020;  //bright red
+      rCoupe.mReady = true;
+      rCoupe.mTimer = 0;
+      rCoupe.pReady = true;
+      rCoupe.pTimer = 0;
+
+      mindist=4*mapEdge;
+
       graphics = this.add.graphics({ lineStyle: { width: 2, color: 0x4444ff, alpha: 1 } });
 
-      for (i=0; i<20; i++) {
-        star[i] = this.add.image(Math.random()*800-400, Math.random()*600-300,'star');
+      for (i=0; i<200; i++){  //rocks construction
+        rocks[i] = this.add.image(0,0, 'rocks')
+        rocks[i].rotation=Math.random()*2*pi;
+        rocks[i].rv=(Math.random()-0.5)*0.02;
+        rocks[i].x=Math.random()*mapEdge*2-mapEdge;
+        rocks[i].y=Math.random()*mapEdge*2-mapEdge;
+        rocks[i].vx=rocks[i].y / mapEdge*2 + (Math.random()-0.5)*0.02 ;
+        rocks[i].vy= (Math.random()-0.5)*0.02 ;
+      }
+
+      for (i=0; i<100; i++) {  //background stars
+        star[i] = this.add.image(Math.random()*mapEdge*2-mapEdge, Math.random()*mapEdge*2-mapEdge,'star');
         star[i].setScale((Math.random()*5+1)/20);
       }
+
     }
 
     function update ()
     {
+      date = new Date();
+      dt = date.getTime()-t;
+      t = date.getTime();
+      if (gCoupe.mTimer < t)
+        gCoupe.mReady = true;
+      if (gCoupe.pTimer < t)
+        gCoupe.pReady = true;
 
-      for (i=0; i<40; i++){
-        rock[i].rotation+=rock[i].rv;
-        rock[i].x+=rock[i].vx;
-        rock[i].y+=rock[i].vy;
-        if (rock[i].x<-5) rock[i].x+=810;
-        if (rock[i].x>805) rock[i].x-=810;
-        if (rock[i].y<-5) {
-          rock[i].y+=610;
-          rock[i].vx*=-1;
+      if (PLUSKey.isDown) //up arrow
+        zoom*=1.05;
+      if (MINUSKey.isDown) //up arrow
+        zoom/=1.05;
+      if (zoom>2.0) zoom=2.0;
+      if (zoom<0.2) zoom=0.2;
+      cam.setZoom(zoom);
+
+      if (keys.up.isDown) //up arrow
+      {
+        gCoupe.vx+=0.01*Math.sin(gCoupe.rotation);
+        gCoupe.vy-=0.01*Math.cos(gCoupe.rotation);
+      }
+      if (keys.left.isDown) //left arrow
+      {
+        if (gCoupe.rv > -0.05)
+          gCoupe.rv-=0.002;
+      }
+      else if (keys.right.isDown) //right arrow
+      {
+        if (gCoupe.rv<0.05)
+          gCoupe.rv+=0.002;
+      }
+      else if (keys.down.isDown) //down arrow
+      {
+        if (gCoupe.rv<0)
+          gCoupe.rv+=0.004;
+        else gCoupe.rv-=0.004;
+        if (Math.abs(gCoupe.rv)<0.004)
+          gCoupe.rv=0;
+      }
+
+      if (PKey.isDown)
+        if (gCoupe.pReady)
+        {
+          p = new Phaser.Geom.Circle(gCoupe.x,gCoupe.y);
+          p.t0 = t;
+          pings.push(p);
+          gCoupe.pReady = false;
+          gCoupe.pTimer = t + 200;
         }
-        if (rock[i].y>605) {
-          rock[i].y-=610;
-          rock[i].vx*=-1;
-        }
-      }
 
-      if (keys.UP.isDown()) //up arrow
-      {
-        ship.vx+=0.01*Math.sin(ship.rotation);
-        ship.vy-=0.01*Math.cos(ship.rotation);
-      }
-      if (keys.LEFT.isDown()) //left arrow
-      {
-        if (ship.rv > -0.05)
-          ship.rv-=0.002;
-      }
-      else if (keys.RIGHT.isDown()) //right arrow
-      {
-        if (ship.rv<0.05)
-          ship.rv+=0.002;
-      }
-      else if (keys.DOWN.isDown()) //down arrow
-      {
-        if (ship.rv<0)
-          ship.rv+=0.004;
-        else ship.rv-=0.004;
-        if (Math.abs(ship.rv)<0.004)
-          ship.rv=0;
-      }
+      if (keys.space.isDown)
+        if (gCoupe.mReady)
+        {
+          m = this.add.image(gCoupe.x,gCoupe.y, 'missile');
+          m.vx=gCoupe.vx;
+          m.vy=gCoupe.vy;
+          m.rotation=gCoupe.rotation;
+          m.hastarget = false;
+          m.target = null;
+          m.ti=-1;
+          m.timer=0;
+          mindist = 4*mapEdge;
+          for (j=0;j<rocks.length;j++){
+            d = Phaser.Math.Distance.Between(m.x, m.y,rocks[j].x,rocks[j].y);
+            if (mindist>d)
+            {
+              mindist = d;
+              m.target = rocks[j];
+              m.hastarget = true;
+              m.ti=j;
 
-      ship.rotation+=ship.rv;
-      ship.x+=ship.vx;
-      ship.y+=ship.vy;
+            }
+          }
+          if (gCoupe===rCoupe)
+            if (mindist>Phaser.Math.Distance.Between(m.x, m.y,gCoupe.x,gCoupe.y))
+            {
+              m.target = gCoupe;
+              m.hastarget = true;
+              m.ti=-1;
+            }
+          if (gCoupe===gCoupe)
+            if (mindist>Phaser.Math.Distance.Between(m.x, m.y,rCoupe.x,rCoupe.y))
+            {
+              m.target = rCoupe;
+              m.hastarget = true;
+              m.ti=-1;
+            }
+            m.timer = t+5000;
+            missiles.push(m);
 
-      lines = [];
-      lines.push([ship.x,ship.y])
+            gCoupe.mReady = false;
+            gCoupe.mTimer = t+1000;
+          }
+
       graphics.clear();
-      for (i=-1; i<(mapEdge/200); i++) {
-        l = new Phaser.Geom.Line﻿(i*200+100,-mapEdge+100,i*200+100,mapEdge-100);
-        graphics.lineStyle(1, 0x004000);
-        graphics.strokeLineShape(l);
+      for (i=0; i<200; i++){ //rocks phsyics
+        rocks[i].rotation+=rocks[i].rv;
+        rocks[i].x+=rocks[i].vx;
+        rocks[i].y+=rocks[i].vy;
+        if (rocks[i].x<-mapEdge-5) rocks[i].x+=2*mapEdge+10;
+        if (rocks[i].x>mapEdge+5) rocks[i].x-=2*mapEdge+10;
+        if (rocks[i].y<-mapEdge-5) {
+          rocks[i].y+=2*mapEdge+10;
+          rocks[i].vx*=-1;
+        }
+        if (rocks[i].y>mapEdge+10) {
+          rocks[i].y-=2*mapEdge+10;
+          rocks[i].vx*=-1;
+        }
       }
-      for (i=-1; i<(mapEdge/200); i++) {
-        l = new Phaser.Geom.Line﻿(-mapEdge+100,i*200+100,mapEdge-100,i*200+100);
-        graphics.lineStyle(1, 0x004000);
-        graphics.strokeLineShape(l);
+
+      for (i=0; i<pings.length;i++){ //ping phsyics
+        if (pings[i].t0 + 4000 > t) //if ping active over 4 seconds, remove it
+        {
+          pings[i].diameter = (t-pings[i].t0)/5;  //*200px/1000ms
+          rgb = Phaser.Display.Color.GetColor(250-(t-pings[i].t0)/16,250-(t-pings[i].t0)/16,0); //250*time/4000 ms
+          graphics.lineStyle(2, rgb);
+          graphics.strokeCircle(pings[i].x,pings[i].y,pings[i].diameter);
+
+          for (j=0; j<rocks.length;j++){
+            dms = Phaser.Math.Distance.Between(rocks[j].x,rocks[j].y,pings[i].x,pings[i].y)*5; //distance in px * ms/px = distance away in ms
+
+            ttp = t-pings[i].t0-dms; //time between ping front and this object
+            if ((ttp>0)&&(ttp<dt)) //if the dms is greater than last frame time but less that this frame time
+            {
+              p = new Phaser.Geom.Circle(rocks[j].x,rocks[j].y);
+              p.t0 = t;
+              p.pingt0 = pings[i].t0;
+              pongs.push(p);  //ping spawns a pong at rocks
+            }
+          }
+        } else pings.splice(i,1);
       }
-      /*
-      for (i=1;i<9;i++){
-        lines.push([lines[i-1][0]+20*ship.vx,lines[i-1][1]+20*ship.vy]);
-        l = new Phaser.Geom.Line﻿(lines[i-1][0],lines[i-1][1],lines[i][0],lines[i][1]);
-        graphics.lineStyle(10-i, Phaser.Display.Color.GetColor(72-7*i, 72-7*i, 280-30*i));
-        graphics.strokeLineShape(l);
-      }
+
+      for (i=0; i<pongs.length;i++){ //ping phsyics
+        if (pongs[i].pingt0 + 4000 > t) //if origin ping active over 4 seconds, remove it
+        {
+          pongs[i].diameter = (t-pongs[i].t0)/5;  //*200px/1000ms
+          cc = 250-(t-pongs[i].pingt0)/16;
+          rgb = Phaser.Display.Color.GetColor(cc,cc,cc); //250*time/4000 ms
+          graphics.lineStyle(1, rgb);
+          graphics.strokeCircle(pongs[i].x,pongs[i].y,pongs[i].diameter);
+
+/* this is for making blips
+          for (j=0; j<rocks.length;j++){
+            d = Phaser.Math.Distance.Between(rocks[j].x,rocks[j].y,pongs[i].x,pongs[i].y);
+            if ((t-dt-pongs[i].t0>=d/200) && (t-pongs[i].t0<d/200)) //if the origin of the pong is between t and dt ago
+            {
+              p = new Phaser.Geom.Circle(gCoupe.x,gCoupe.y);
+              p.t0 = t;
+              p.e = blips[i].e;
+              pongs.push(p);
+            }
+          }
 */
-
-      //console.log("X:" + ship.x + " Y:" + ship.y);
-      if (keys.R.isDown())
-      {
-        ship.x=0;
-        ship.y=0;
-        ship.vx=0;
-        ship.vy=0;
-        ship.vr=0;
-        ship.rotation=0;
+        } else pongs.splice(i,1);
       }
 
+      for (i=0; i<missiles.length;i++){ //missile phsyics
+        missiles[i].x+=missiles[i].vx;
+        missiles[i].y+=missiles[i].vy;
+        if (t<missiles[i].timer){
+          if (Phaser.Math.Distance.Between(missiles[i].x, missiles[i].y,missiles[i].target.x,missiles[i].target.y) < 20){
+            if (missiles[i].target===rCoupe)
+              console.log('You win! LUL!');
+            else {
+              if (missiles[i].ti > -1)
+                rocks[missiles[i].ti].x=-mapEdge;
+            }
+            boom = this.add.sprite(missiles[i].x, missiles[i].y, 'boom');
+            boom.anims.play('explode',false); //animate the explosion here
+            missiles[i].destroy();
+            missiles.splice(i,1); //remove this missile
+          }
+          else{
+            rrr = Math.atan2(missiles[i].y-missiles[i].target.y, missiles[i].x-missiles[i].target.x);
+            missiles[i].rotation = rrr-pi/2; //point at target and accelerate
+            missiles[i].vx+=0.04*Math.sin(missiles[i].rotation);
+            missiles[i].vy-=0.04*Math.cos(missiles[i].rotation);
+          }
+        } else {
+          missiles[i].destroy();
+        }
+      }
+
+
+
+      gCoupe.rotation+=gCoupe.rv; //ship physics!
+      gCoupe.x+=gCoupe.vx;
+      gCoupe.y+=gCoupe.vy;
+
+      if (Phaser.Math.Distance.Between(gCoupe.x,gCoupe.y,rCoupe.x,rCoupe.y)<200) //if far
+        rCoupe.rotation=Math.atan2(gCoupe.y-rCoupe.y,gCoupe.x-rCoupe.x); //giver 90
+      else rCoupe.rotation=Math.atan2(gCoupe.y-rCoupe.y,gCoupe.x-rCoupe.x)+pi/2; //attack that person
+      if (Math.abs(rCoupe.vx)<1.6) rCoupe.vx+=0.01*Math.sin(rCoupe.rotation); else rCoupe.vx *= 0.95;
+      if (Math.abs(rCoupe.vy)<1.6) rCoupe.vy-=0.01*Math.cos(rCoupe.rotation); else rCoupe.vy *= 0.95;
+      rCoupe.x+=rCoupe.vx;
+      rCoupe.y+=rCoupe.vy;
+
+
+      for (i=0; i<(mapEdge/100); i++) {
+        l = new Phaser.Geom.Line﻿(-mapEdge+(i*200),-mapEdge,-mapEdge+(i*200),mapEdge);
+        graphics.lineStyle(1, 0x004000);
+        graphics.strokeLineShape(l);
+      }
+      for (i=-1; i<(mapEdge/100); i++) {
+        l = new Phaser.Geom.Line﻿(-mapEdge,-mapEdge+(i*200),mapEdge,-mapEdge+(i*200));
+        graphics.lineStyle(1, 0x004000);
+        graphics.strokeLineShape(l);
+      }
+
+    if (RKey.isDown)
+      {
+        gCoupe.x=0;
+        gCoupe.y=0;
+        gCoupe.vx=0;
+        gCoupe.vy=0;
+        gCoupe.rv=0;
+        gCoupe.rotation=0;
+        zoom=1.0;
+
+      }
     }
 
 </script>
