@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Making your first Phaser 3 Game - Part 2</title>
-    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <script src="http://cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -23,6 +23,7 @@
             update: update
         }
     };
+  {
     var game = new Phaser.Game(config);
     var rocks = [];
     var star = [];
@@ -34,17 +35,23 @@
     var t;
     var dt;
     var date;
+    var spriteview;
+    var pingview; //light switch
+    var pongview;
+    var blipview;
+    var activeShip;
+  } //GLOBAL initialize
 
     function preload ()
     {
-      this.load.image('coupe', 'assets/coupe.png');
-      this.load.image('rocks', 'assets/bomb.png');
-      this.load.image('star', 'assets/star.png');
-      this.load.image('missile', 'assets/missile.png');
-      this.load.spritesheet('asplode', 'assets/splode.png',{frameWidth: 32, frameHeight: 32, endFrame: 2 });
-
-
+      this.load.image('coupe', 'coupe.png');
+      this.load.image('rocks', 'bomb.png');
+      this.load.image('star', 'star.png');
+      this.load.image('missile', 'missile.png');
+      this.load.spritesheet('asplode', 'splode.png',{frameWidth: 32, frameHeight: 32, endFrame: 2 });
     }
+
+
 
     function create ()
     {
@@ -56,167 +63,210 @@
       }
       this.anims.create(config);
 
+      date = new Date;
+      t = date.getTime()/1000;
 
       pi = 3.141592653;
+{ //keys initialize
       keys = this.input.keyboard.createCursorKeys();
+      IKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+      KKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+      LKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
+      OKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O);
       PKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
       RKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+      TKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+      WKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+      AKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+      SKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+      DKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+      XKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
       PLUSKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PLUS);
       MINUSKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.MINUS);
-
-      mapEdge = 2000; //max x and y and negative for mins
+}
+      mapEdge = 1000; //max x and y and negative for mins
       cam = this.cameras.main;
       cam.followOffset.set(-100, -100);
       cam.setBounds(-mapEdge, -mapEdge, 2*mapEdge, 2*mapEdge);
       zoom = 1.0;
-
+{ //gCoupe construction
       gCoupe = this.add.image(0,0, 'coupe')
       gCoupe.player = 1;  //player controlled
       gCoupe.rv=0.0;
       gCoupe.vx=0.0;
       gCoupe.vy=0.0;
-      gCoupe.setScale(0.5);
+      gCoupe.amax=5; // maximum available thrust
+      gCoupe.rmax=0.05; // maximum rotation in rad/sec
+      gCoupe.ramax=0.1; // maximum rotational velocity change per second
+      gCoupe.setScale(0.4);
       gCoupe.tint = 0x20ff20;  //bright green
       gCoupe.mReady = true;
       gCoupe.mTimer = 0;
       gCoupe.pReady = true;
       gCoupe.pTimer = 0;
+      gCoupe.blips=[];
+      gCoupe.bliplines=[];
       cam.startFollow(gCoupe);
-
+      gCoupe.name = 'gCoupe';
+      activeShip = gCoupe;
+}
+{ //rCoupe construction
       rCoupe = this.add.image(0,0, 'coupe')
+      //rCoupe.visible = false
+      rCoupe.x = (Math.random()-0.5)*200;
+      rCoupe.y = (Math.random()-0.5)*200 ;
       rCoupe.player = 0;  // NPC
       rCoupe.rv=0.0;
       rCoupe.vx=0.0;
       rCoupe.vy=0.0;
-      rCoupe.setScale(0.5);
+      rCoupe.amax=5; // maximum available thrust
+      rCoupe.rmax=0.05; // maximum rotation in rad/sec
+      rCoupe.ramax=0.1; // maximum rotational velocity change per second
+      rCoupe.setScale(0.4);
       rCoupe.tint = 0xff2020;  //bright red
       rCoupe.mReady = true;
       rCoupe.mTimer = 0;
       rCoupe.pReady = true;
       rCoupe.pTimer = 0;
-
+      rCoupe.blips=[] ;
+      rCoupe.name = 'rCoupe';
+} //rCoupe initialize
       mindist=4*mapEdge;
 
       graphics = this.add.graphics({ lineStyle: { width: 2, color: 0x4444ff, alpha: 1 } });
 
-      for (i=0; i<200; i++){  //rocks construction
+      for (i=0; i<100; i++){  //rocks construction
         rocks[i] = this.add.image(0,0, 'rocks')
+        rocks[i].visible = false;
         rocks[i].rotation=Math.random()*2*pi;
-        rocks[i].rv=(Math.random()-0.5)*0.02;
+        rocks[i].rv=(Math.random()-0.5)*0.2;
         rocks[i].x=Math.random()*mapEdge*2-mapEdge;
         rocks[i].y=Math.random()*mapEdge*2-mapEdge;
-        rocks[i].vx=rocks[i].y / mapEdge*2 + (Math.random()-0.5)*0.02 ;
-        rocks[i].vy= (Math.random()-0.5)*0.02 ;
+        rocks[i].vx=(rocks[i].y / mapEdge*2)*10 + (Math.random()-0.5)*0.2 ;
+        rocks[i].vy= (Math.random()-0.5)*0.2 ;
       }
 
-      for (i=0; i<100; i++) {  //background stars
+      for (i=0; i<200; i++) {  //background stars
         star[i] = this.add.image(Math.random()*mapEdge*2-mapEdge, Math.random()*mapEdge*2-mapEdge,'star');
-        star[i].setScale((Math.random()*5+1)/20);
+        star[i].setScale((Math.random()*5+1)/50);
       }
 
-    }
+      for (i=0;i<20; i++) //missiles create
+      {
+        missiles[i] = this.add.image(-mapEdge-10, -mapEdge-10, 'missile');
+        missiles[i].visible = false;
+      }
+
+    } //create end
 
     function update ()
     {
       date = new Date();
-      dt = date.getTime()-t;
-      t = date.getTime();
+      dt = date.getTime()/1000-t; //  time in seconds elapsed since last frame
+      t = date.getTime()/1000;    // timestamp in seconds of this frame
+
       if (gCoupe.mTimer < t)
         gCoupe.mReady = true;
       if (gCoupe.pTimer < t)
         gCoupe.pReady = true;
 
-      if (PLUSKey.isDown) //up arrow
+      if (PLUSKey.isDown) // to zoom in
         zoom*=1.05;
-      if (MINUSKey.isDown) //up arrow
+      if (MINUSKey.isDown) // to zoom out
         zoom/=1.05;
       if (zoom>2.0) zoom=2.0;
       if (zoom<0.2) zoom=0.2;
       cam.setZoom(zoom);
 
-      if (keys.up.isDown) //up arrow
-      {
-        gCoupe.vx+=0.01*Math.sin(gCoupe.rotation);
-        gCoupe.vy-=0.01*Math.cos(gCoupe.rotation);
-      }
-      if (keys.left.isDown) //left arrow
-      {
-        if (gCoupe.rv > -0.05)
-          gCoupe.rv-=0.002;
-      }
-      else if (keys.right.isDown) //right arrow
-      {
-        if (gCoupe.rv<0.05)
-          gCoupe.rv+=0.002;
-      }
-      else if (keys.down.isDown) //down arrow
-      {
-        if (gCoupe.rv<0)
-          gCoupe.rv+=0.004;
-        else gCoupe.rv-=0.004;
-        if (Math.abs(gCoupe.rv)<0.004)
-          gCoupe.rv=0;
-      }
-
-      if (PKey.isDown)
-        if (gCoupe.pReady)
+      if (keys.up.isDown) //up arrow to accelerate
         {
-          p = new Phaser.Geom.Circle(gCoupe.x,gCoupe.y);
-          p.t0 = t;
-          pings.push(p);
-          gCoupe.pReady = false;
-          gCoupe.pTimer = t + 200;
+        accelerateObject(gCoupe);
+      }
+      if (keys.left.isDown) //left arrow to increase rotation
+        {
+        rotateObject(gCoupe, -gCoupe.ramax)
         }
-
-      if (keys.space.isDown)
+      else if (keys.right.isDown) //right arrow to increase rotation
+        {
+          rotateObject(gCoupe, gCoupe.ramax)
+        }
+      else if (keys.down.isDown) //down arrow to reduce rotation
+        {
+          killRotationObject(gCoupe)
+        }
+      if (TKey.isDown) //magically rotate gCoupe toward rCoupe
+        {
+          EZrotateTo(gCoupe,rCoupe);
+        }
+      if (PKey.isDown) //send ping from gCoupe
+        {
+          ping(gCoupe);
+        }
+      if (keys.space.isDown) //fire a missile
         if (gCoupe.mReady)
         {
-          m = this.add.image(gCoupe.x,gCoupe.y, 'missile');
-          m.vx=gCoupe.vx;
-          m.vy=gCoupe.vy;
-          m.rotation=gCoupe.rotation;
-          m.hastarget = false;
-          m.target = null;
-          m.ti=-1;
-          m.timer=0;
           mindist = 4*mapEdge;
           for (j=0;j<rocks.length;j++){
-            d = Phaser.Math.Distance.Between(m.x, m.y,rocks[j].x,rocks[j].y);
-            if (mindist>d)
+            d = Phaser.Math.Distance.Between(gCoupe.x, gCoupe.y,rocks[j].x,rocks[j].y);
+            if (d<mindist)
             {
               mindist = d;
-              m.target = rocks[j];
-              m.hastarget = true;
-              m.ti=j;
-
+              ti=j;
             }
           }
-          if (gCoupe===rCoupe)
-            if (mindist>Phaser.Math.Distance.Between(m.x, m.y,gCoupe.x,gCoupe.y))
-            {
-              m.target = gCoupe;
-              m.hastarget = true;
-              m.ti=-1;
-            }
-          if (gCoupe===gCoupe)
-            if (mindist>Phaser.Math.Distance.Between(m.x, m.y,rCoupe.x,rCoupe.y))
-            {
-              m.target = rCoupe;
-              m.hastarget = true;
-              m.ti=-1;
-            }
-            m.timer = t+5000;
-            missiles.push(m);
+          if (mindist>Phaser.Math.Distance.Between(gCoupe.x, gCoupe.y,rCoupe.x,rCoupe.y))
+            ti=-1;
+          if (ti>-1) fireMissile(gCoupe,rocks[ti], ti);
+          else fireMissile(gCoupe,rCoupe);
+        }
+      if (WKey.isDown) //accelerate gCoupe toward rCoupe
+        {
+          accelerateAtAngleTo(gCoupe,rCoupe,pi);
+        }
+      if (AKey.isDown) //T key to magically rotate gCoupe toward rCoupe
+        {
+          accelerateAtAngleTo(gCoupe,rCoupe,pi/2);
+        }
+      if (SKey.isDown) //accelerate gCoupe toward rCoupe
+        {
+          accelerateAtAngleTo(gCoupe,rCoupe,0);
+        }
+      if (DKey.isDown) //T key to magically rotate gCoupe toward rCoupe
+        {
+          accelerateAtAngleTo(gCoupe,rCoupe,3*pi/2);
+        }
+      if (XKey.isDown) //killTangentialVelocity
+        {
+          killTangentialVelocity(gCoupe,rCoupe);
+        }
 
-            gCoupe.mReady = false;
-            gCoupe.mTimer = t+1000;
-          }
+      if (RKey.isDown) //reset to origin
+        {
+          gCoupe.x=0;
+          gCoupe.y=0;
+          gCoupe.vx=0;
+          gCoupe.vy=0;
+          gCoupe.rv=0;
+          gCoupe.rotation=0;
+          zoom=1.0;
+        }
 
       graphics.clear();
-      for (i=0; i<200; i++){ //rocks phsyics
-        rocks[i].rotation+=rocks[i].rv;
-        rocks[i].x+=rocks[i].vx;
-        rocks[i].y+=rocks[i].vy;
+      for (i=0; i<(mapEdge/100); i++) {
+        l = new Phaser.Geom.Line﻿(-mapEdge+(i*200),-mapEdge,-mapEdge+(i*200),mapEdge);
+        graphics.lineStyle(1, 0x004000);
+        graphics.strokeLineShape(l);
+      } onkeyup=""
+      for (i=-1; i<(mapEdge/100); i++) {
+        l = new Phaser.Geom.Line﻿(-mapEdge,-mapEdge+(i*200),mapEdge,-mapEdge+(i*200));
+        graphics.lineStyle(1, 0x004000);
+        graphics.strokeLineShape(l);
+      }
+
+      for (i=0; i<rocks.length; i++){ //rocks phsyics update
+        rocks[i].rotation+=dt*rocks[i].rv;
+        rocks[i].x+=dt*rocks[i].vx;
+        rocks[i].y+=dt*rocks[i].vy;
         if (rocks[i].x<-mapEdge-5) rocks[i].x+=2*mapEdge+10;
         if (rocks[i].x>mapEdge+5) rocks[i].x-=2*mapEdge+10;
         if (rocks[i].y<-mapEdge-5) {
@@ -229,119 +279,363 @@
         }
       }
 
-      for (i=0; i<pings.length;i++){ //ping phsyics
-        if (pings[i].t0 + 4000 > t) //if ping active over 4 seconds, remove it
+      for (i=0; i<pings.length;i++){ //ping phsyics update
+        if (pings[i].t0 + 4 > t) //if ping active over 4 seconds, remove it
         {
-          pings[i].diameter = (t-pings[i].t0)/5;  //*200px/1000ms
-          rgb = Phaser.Display.Color.GetColor(250-(t-pings[i].t0)/16,250-(t-pings[i].t0)/16,0); //250*time/4000 ms
-          graphics.lineStyle(2, rgb);
+          pings[i].diameter = (t-pings[i].t0)*200;  //*200px/sec
+          cc = 4-(t-pings[i].t0); //starts bright, fades with time
+          cc*=255/4;
+          rgb = Phaser.Display.Color.GetColor(cc,cc,0); //yellow
+          graphics.lineStyle(1, rgb, 0.2);
           graphics.strokeCircle(pings[i].x,pings[i].y,pings[i].diameter);
+          graphics.lineStyle(1, rgb, 0.4);
+          graphics.strokeCircle(pings[i].x,pings[i].y,pings[i].diameter/2);
+
 
           for (j=0; j<rocks.length;j++){
-            dms = Phaser.Math.Distance.Between(rocks[j].x,rocks[j].y,pings[i].x,pings[i].y)*5; //distance in px * ms/px = distance away in ms
+            dms = Phaser.Math.Distance.Between(rocks[j].x,rocks[j].y,pings[i].x,pings[i].y)/200; //distance away in  seconds
 
-            ttp = t-pings[i].t0-dms; //time between ping front and this object
+            ttp = t-pings[i].t0-dms; //time between ping front and this rock
             if ((ttp>0)&&(ttp<dt)) //if the dms is greater than last frame time but less that this frame time
             {
               p = new Phaser.Geom.Circle(rocks[j].x,rocks[j].y);
+              p.source = rocks[j];
               p.t0 = t;
               p.pingt0 = pings[i].t0;
               pongs.push(p);  //ping spawns a pong at rocks
             }
           }
+
+          dms = Phaser.Math.Distance.Between(gCoupe.x,gCoupe.y,pings[i].x,pings[i].y)/200; //distance away in seconds
+          ttp = t-pings[i].t0-dms; //time between ping front and gCoupe
+          if ((ttp>0)&&(ttp<dt)) //if the dms is greater than last frame time but less that this frame time
+          {
+            p = new Phaser.Geom.Circle(gCoupe.x,gCoupe.y);
+            p.source = gCoupe;
+            p.t0 = t;
+            p.pingt0 = pings[i].t0;
+            pongs.push(p);  //ping spawns a pong at rocks
+          }
+
+          dms = Phaser.Math.Distance.Between(rCoupe.x,rCoupe.y,pings[i].x,pings[i].y)/200; //distance away in seconds
+          ttp = t-pings[i].t0-dms; //time between ping front and rCoupe
+          if ((ttp>=0)&&(ttp<dt)) //if ping front was crossed within the last frame **bug - ship movement can jump over entire ping frames
+          {
+            p = new Phaser.Geom.Circle(rCoupe.x,rCoupe.y);
+            p.source = rCoupe;
+            p.t0 = t;
+            p.pingt0 = pings[i].t0;
+            pongs.push(p);  //ping spawns a pong at rocks
+          }
+
         } else pings.splice(i,1);
       }
 
-      for (i=0; i<pongs.length;i++){ //ping phsyics
-        if (pongs[i].pingt0 + 4000 > t) //if origin ping active over 4 seconds, remove it
+      for (i=0; i<pongs.length;i++){ //pong phsyics
+        if (pongs[i].pingt0 + 4 > t) //if origin ping active over 4 seconds, remove it
         {
-          pongs[i].diameter = (t-pongs[i].t0)/5;  //*200px/1000ms
-          cc = 250-(t-pongs[i].pingt0)/16;
-          rgb = Phaser.Display.Color.GetColor(cc,cc,cc); //250*time/4000 ms
-          graphics.lineStyle(1, rgb);
+          pongs[i].diameter = (t-pongs[i].t0)*200;  //*200px/sec
+          cc = 4-(t-pongs[i].pingt0); //starts bright, fades with time
+          cc*=255/4;
+          rgb = Phaser.Display.Color.GetColor(cc,cc,cc);
+          graphics.lineStyle(1, rgb, 0.2);
           graphics.strokeCircle(pongs[i].x,pongs[i].y,pongs[i].diameter);
 
-/* this is for making blips
-          for (j=0; j<rocks.length;j++){
-            d = Phaser.Math.Distance.Between(rocks[j].x,rocks[j].y,pongs[i].x,pongs[i].y);
-            if ((t-dt-pongs[i].t0>=d/200) && (t-pongs[i].t0<d/200)) //if the origin of the pong is between t and dt ago
+          dms = Phaser.Math.Distance.Between(gCoupe.x,gCoupe.y,pongs[i].x,pongs[i].y)/200; //distance away in sec between pongs and gCoupe
+          ttp = t-pongs[i].t0-dms; //time between pong front and gCoupe
+          if ((ttp>0)&&(ttp<dt)) //if the origin of the pong is between t and dt ago
+          {
+            b = new Phaser.Geom.Circle(pongs[i].x,pongs[i].y,2);
+            if (pongs[i].source===gCoupe) b.rgb=0x80FF80;
+            else if (pongs[i].source===rCoupe) b.rgb=0xFF8080;
+            else b.rgb=0x8080FF;
+            b.source = pongs[i].source;
+            b.t0 = pongs[i].t0;
+            b.e = pongs[i].e;
+            b.last = null;
+            ll = null;
+            d=mapEdge*4;
+            for (j=0;j<gCoupe.blips.length-1;j++) //find nearest blip of the same object
             {
-              p = new Phaser.Geom.Circle(gCoupe.x,gCoupe.y);
-              p.t0 = t;
-              p.e = blips[i].e;
-              pongs.push(p);
+              if (b.source===gCoupe.blips[j].source) {
+                dd = Phaser.Math.Distance.Between(gCoupe.blips[j].x,gCoupe.blips[j].y, b.x, b.y);
+                if (dd<d) {
+                  d=dd;
+                  b.last = gCoupe.blips[j]; //point this blip to the nearest blip from the same object
+                }
+              }
+            }
+            gCoupe.blips.push(b); //gCoupe adds blip from this pong
+
+            if (!!b.last){
+              ll = new Phaser.Geom.Line(b.x,b.y,b.last.x,b.last.y);
+              ll.t0=t;
+              ll.rgb = b.rgb;
+              ll.source = b.source;
+              gCoupe.bliplines.push(ll); //if a last blip for this blip's source was found, add a blipline
             }
           }
-*/
+
+          d = Phaser.Math.Distance.Between(rCoupe.x,rCoupe.y,pongs[i].x,pongs[i].y)/200; //distance away in seconds between pongs and rCoupe
+          ttp = t-pongs[i].t0-dms; //time between pong front and gCoupe
+          if ((ttp>0)&&(ttp<dt)) //if the origin of the pong is between t and dt ago
+          {
+            b = new Phaser.Geom.Circle(pongs[i].x,pongs[i].y,2);
+            b.source = pongs[i].source;
+            if (pongs[i].source===gCoupe) b.rgb=0x80FF80;
+            else if (pongs[i].source===rCoupe) b.rgb=0xFF8080;
+            else b.rgb=0x8080FF;
+            b.t0 = t;
+            b.e = pongs[i].e;
+            b.last = null;
+            for (j=0;j<gCoupe.blips.length-1;j++) //find nearest blip of the same object
+            {
+              if (b.source===gCoupe) {
+                dd = Phaser.Math.Distance.Between(gCoupe.blips[j].x,gCoupe.blips[j].y, b.x, b.y);
+                if (dd<d) {
+                  d=dd;
+                  b.last = gCoupe.blips[j]; //point this blip to the nearest blip from the same object
+                }
+              }
+            }
+            gCoupe.blips.push(b) //rCoupe adds blip from this pong
+            if (!!b.last){
+              ll = new Phaser.Geom.Line(b.x,b.y,b.last.x,b.last.y);
+              ll.t0=t;
+              ll.rgb = b.rgb;
+              ll.source = b.source;
+              gCoupe.bliplines.push(ll);
+            }
+          }
         } else pongs.splice(i,1);
       }
 
-      for (i=0; i<missiles.length;i++){ //missile phsyics
-        missiles[i].x+=missiles[i].vx;
-        missiles[i].y+=missiles[i].vy;
-        if (t<missiles[i].timer){
-          if (Phaser.Math.Distance.Between(missiles[i].x, missiles[i].y,missiles[i].target.x,missiles[i].target.y) < 20){
-            if (missiles[i].target===rCoupe)
-              console.log('You win! LUL!');
-            else {
-              if (missiles[i].ti > -1)
-                rocks[missiles[i].ti].x=-mapEdge;
-            }
-            boom = this.add.sprite(missiles[i].x, missiles[i].y, 'boom');
+      for (i=0; i<missiles.length;i++) //missile phsyics
+        if (missiles[i].visible) // ignore the invisible
+        {
+          missiles[i].x+=dt*missiles[i].vx;
+          missiles[i].y+=dt*missiles[i].vy;
+          if (t<missiles[i].timer){
+            if (Phaser.Math.Distance.Between(missiles[i].x, missiles[i].y,missiles[i].target.x,missiles[i].target.y) < 20){
+              if (missiles[i].target===rCoupe)
+                console.log('You win! LUL!');
+              else {
+                if (missiles[i].ti > -1)
+                  rocks[missiles[i].ti].x=-mapEdge;
+              }
+            boom = this.add.sprite(missiles[i].x, missiles[i].y, 'asplode');
             boom.anims.play('explode',false); //animate the explosion here
-            missiles[i].destroy();
-            missiles.splice(i,1); //remove this missile
-          }
-          else{
+            //boom.destroy();
+            missiles[i].visible = false;
+          } else {
             rrr = Math.atan2(missiles[i].y-missiles[i].target.y, missiles[i].x-missiles[i].target.x);
             missiles[i].rotation = rrr-pi/2; //point at target and accelerate
-            missiles[i].vx+=0.04*Math.sin(missiles[i].rotation);
-            missiles[i].vy-=0.04*Math.cos(missiles[i].rotation);
+            missiles[i].vx+=20*dt*Math.sin(missiles[i].rotation);
+            missiles[i].vy-=20*dt*Math.cos(missiles[i].rotation);
+            if ((missiles[i].vx*missiles[i].vx + missiles[i].vy*missiles[i].vy)>40000){  //slow down, dang
+              missiles[i].vx *= 0.998;
+              missiles[i].vy *= 0.998;
+            }
           }
         } else {
-          missiles[i].destroy();
+          missiles[i].visible=false;
         }
       }
 
-
-
       gCoupe.rotation+=gCoupe.rv; //ship physics!
-      gCoupe.x+=gCoupe.vx;
-      gCoupe.y+=gCoupe.vy;
-
-      if (Phaser.Math.Distance.Between(gCoupe.x,gCoupe.y,rCoupe.x,rCoupe.y)<200) //if far
-        rCoupe.rotation=Math.atan2(gCoupe.y-rCoupe.y,gCoupe.x-rCoupe.x); //giver 90
-      else rCoupe.rotation=Math.atan2(gCoupe.y-rCoupe.y,gCoupe.x-rCoupe.x)+pi/2; //attack that person
-      if (Math.abs(rCoupe.vx)<1.6) rCoupe.vx+=0.01*Math.sin(rCoupe.rotation); else rCoupe.vx *= 0.95;
-      if (Math.abs(rCoupe.vy)<1.6) rCoupe.vy-=0.01*Math.cos(rCoupe.rotation); else rCoupe.vy *= 0.95;
-      rCoupe.x+=rCoupe.vx;
-      rCoupe.y+=rCoupe.vy;
-
-
-      for (i=0; i<(mapEdge/100); i++) {
-        l = new Phaser.Geom.Line﻿(-mapEdge+(i*200),-mapEdge,-mapEdge+(i*200),mapEdge);
-        graphics.lineStyle(1, 0x004000);
-        graphics.strokeLineShape(l);
-      }
-      for (i=-1; i<(mapEdge/100); i++) {
-        l = new Phaser.Geom.Line﻿(-mapEdge,-mapEdge+(i*200),mapEdge,-mapEdge+(i*200));
-        graphics.lineStyle(1, 0x004000);
-        graphics.strokeLineShape(l);
+      if ((gCoupe.vx*gCoupe.vx + gCoupe.vy*gCoupe.vy)>40000){  //slow down, dang
+        gCoupe.vx *= 0.98;
+        gCoupe.vy *= 0.98;
       }
 
-    if (RKey.isDown)
+      gCoupe.x+=dt*gCoupe.vx;
+      gCoupe.y+=dt*gCoupe.vy;
+      for (i=0; i<gCoupe.blips.length;i++)
       {
-        gCoupe.x=0;
-        gCoupe.y=0;
-        gCoupe.vx=0;
-        gCoupe.vy=0;
-        gCoupe.rv=0;
-        gCoupe.rotation=0;
-        zoom=1.0;
+          if (t < gCoupe.blips[i].t0+10){
+            gCoupe.blips[i].e -= 0.01;
+            cc = 14-(t-gCoupe.blips[i].t0); //starts bright, fades with time
+            cc*=255/10;
+            if (cc>255) cc = 255;
+            if (cc<0) cc = 0;
+            cc2 = cc-128;
+            if (cc2<0) cc2=0;
+            if (gCoupe.blips[i].source===gCoupe) rgb=Phaser.Display.Color.GetColor(cc2,cc,cc2);   //if blip is gCoupe, make it lgreen
+            else if (gCoupe.blips[i].source===rCoupe) rgb=Phaser.Display.Color.GetColor(cc,cc2,cc2);         //if blip is rCoupe, make it lred
+            else rgb=Phaser.Display.Color.GetColor(cc2,cc2,cc);                                       //else, make it lblue
 
+            graphics.fillStyle(rgb, 0.25);
+            graphics.fillCircleShape(gCoupe.blips[i]);
+          }
+          else
+          {
+            gCoupe.blips.splice(i,1);
+          }
+      }
+      for (i=0; i<gCoupe.bliplines.length;i++)
+      {
+          if (t < gCoupe.bliplines[i].t0+10){
+            cc = 14-(t-gCoupe.bliplines[i].t0); //starts bright, fades with time
+            cc*=255/10;
+            if (cc>255) cc = 255;
+            if (cc<0) cc = 0;
+            cc2 = cc-128;
+            if (cc2<0) cc2=0;
+            if (gCoupe.bliplines[i].source===gCoupe) rgb=Phaser.Display.Color.GetColor(cc2,cc,cc2);   //if blip is gCoupe, make it lgreen
+            else if (gCoupe.bliplines[i].source===rCoupe) rgb=Phaser.Display.Color.GetColor(cc,cc2,cc2);         //if blip is rCoupe, make it lred
+            else rgb=Phaser.Display.Color.GetColor(cc2,cc2,cc);                                       //else, make it lblue
+            graphics.lineStyle(1, rgb, 1);
+            graphics.strokeLineShape(gCoupe.bliplines[i]);
+          }
+          else
+          {
+            gCoupe.bliplines.splice(i,1);
+          }
+      }
+
+
+      if (Phaser.Math.Distance.Between(gCoupe.x,gCoupe.y,rCoupe.x,rCoupe.y)<200) //if close
+        accelerateAtAngleTo(rCoupe,gCoupe,pi/2)//rCoupe.rotation=Math.atan2(gCoupe.y-rCoupe.y,gCoupe.x-rCoupe.x); //giver 90
+      else accelerateAtAngleTo(rCoupe,gCoupe,pi )//rCoupe.rotation=Math.atan2(gCoupe.y-rCoupe.y,gCoupe.x-rCoupe.x)+pi/2; // else attack that person
+      if (Math.abs(rCoupe.vx)<100) rCoupe.vx+=5*dt*Math.sin(rCoupe.rotation); else rCoupe.vx *= 0.98; //slow if moving too fast
+      if (Math.abs(rCoupe.vy)<100) rCoupe.vy-=5*dt*Math.cos(rCoupe.rotation); else rCoupe.vy *= 0.98  ;
+      rCoupe.x+=dt*rCoupe.vx;
+      rCoupe.y+=dt*rCoupe.vy;
+    /*  for (i=0; i<rCoupe.blips.length;i++)
+      {
+          if (t < rCoupe.blips[i].t0+6){
+            graphics.fillStyle(rCoupe.blips[i].rgb, 0.75);
+            graphics.fillCircleShape(rCoupe.blips[i]);
+          }
+          else
+          {
+            gCoupe.blips.splice(i,1);
+          }
+      }
+red's blips come later */
+
+
+    } //update end
+
+    function quadratic(a,b,c){
+      if (a==0) return -(c/b);
+      else
+      {
+        bb=b/a;
+        cc=c/a;
+        disc = (bb*bb)-4*cc;
+        if (disc<0) return null;
+        else {
+          disc = Math.sqrt(disc);
+          return [(-b-disc)/2,(-b+disc)/2]; //I should only care about the positive root
+        }
+      }
+      return null; // should never be here
+    }
+    function pulseHitsObject(px, py, pt0, o) { //at what time does pulse p hit object o (assuming linear movement)
+      if (o===null) return null;
+      else {
+        ppx=px-o.x;
+        ppy=py-o.y; //change frame of reference by object velocity
+
+        a = Math.pow(o.vx,2) + Math.pow(o.vy,2) - 1;
+        b = (o.vx*ppx + o.vy*ppy)*-2; //derived with -v of object in new frame of reference
+        c = Math.pow(ppx,2) + Math.pow(ppx,2)
+        q = quadratic(a,b,c);
+        if (q.length>0)
+          return Math.max(q[0],q[1]);
+        else return null;
+      }
+      return null;
+    }
+    function accelerateObject(o, a=o.amax) {
+      if (a>o.amax) a=o.amax;
+      if (a<0) a=0;
+      o.vx+=a*dt*Math.sin(o.rotation);
+      o.vy-=a*dt*Math.cos(o.rotation);
+    }
+    function rotateObject(o, ra=0){
+      if (ra>o.ramax) ra=o.ramax;
+      if (ra<-o.ramax) ra=-o.ramax;
+      o.rv+=ra*dt;
+      if (o.rv > o.rmax) o.rv = o.rmax;
+      if (o.rv < -o.rmax) o.rv = -o.rmax;
+
+    }
+    function killRotationObject(o, ra=o.ramax) {
+      if (o.rv<0)
+        o.rv+=ra*dt;
+      else o.rv-=ra*dt;
+      if (Math.abs(o.rv)<ra)
+        o.rv=0;
+    }
+    function fireMissile(o, target=null, ri=-1) {
+      i=0;
+      while ((i<missiles.length)&&(missiles[i].visible==true))
+        i++;
+      missiles[i].visible = true;
+      missiles[i].x=o.x;
+      missiles[i].y=o.y;
+      missiles[i].vx=o.vx;
+      missiles[i].vy=o.vy;
+      missiles[i].rotation=o.rotation;
+      if (target===null) {
+        missiles[i].hastarget = false;
+        missiles[i].target = null;
+        missiles[i].timer=0;
+      } else {
+        missiles[i].hastarget = true;
+        missiles[i].target = target;
+      }
+      missiles[i].ti=ri;
+      missiles[i].timer = t+5;
+      o.mReady = false;
+      o.mTimer = t+1;
+
+    }
+    function rotateTo(o,o2){ //kind of super broken
+      a = Math.atan2(o.y-o2.y,o.x-o2.x)+3*pi/2;
+      rdl = (o.rotation-a+4*pi)%(2*pi);  //rotational distance left
+      tdl = rdl/o.rmax;             //time to get there at full rotational velocity
+      rdr = (o.rotation+a+4*pi)%(2*pi);  //rotational distance right
+      tdr = rdr/o.rmax;             //time to get there at full rotational velocity
+      console.log('RDR:' + rdr + ' RDL:' + rdl);
+      if (tdr>tdl){
+        if (o.rv<rdr*o.ramax) rotateObject(o, -o.ramax);  //if I can accelerate rotation and slow down in time, do so
+        else killRotationObject(o, -o.rv); //if close, decel to zero rv
+      } else {
+        if (o.rv<rdl*o.ramax) rotateObject(o, o.ramax);  //if I can accelerate rotation and slow down in time, do so
+        else killRotationObject(o, o.rv);
       }
     }
-
+    function EZrotateTo(o,o2){
+      o.rotation = Math.atan2(o.y-o2.y,o.x-o2.x)+3*pi/2;
+    } //kind of super cheating
+    function accelerateAtAngleTo(o,o2,a=0)  //for acclelerating toward, away from, or at angle to an object
+      {
+        a0 = Math.atan2(o.y-o2.y,o.x-o2.x)+3*pi/2; //current angle
+        a = a%(2*pi);
+        o.rotation = (a0+a)%(2*pi)-pi;
+        accelerateObject(o);
+      }
+    function killTangentialVelocity(o,o2)   //make your velocity colinear with relative position
+      {
+        a = Math.atan2(o.y-o2.y,o.x-o2.x)+3*pi/2; //current angle
+        a = a%(2*pi);
+        va = Math.atan2(o.vy,o.vx);               //find velocity angle
+        o.rotation=va-a+pi;
+        accelerateObject(o);
+      }
+    function ping(o) {
+      if (o.pReady)
+      {
+        p = new Phaser.Geom.Circle(o.x,o.y);
+        p.t0 = t;
+        pings.push(p);
+        o.pReady = false;
+        o.pTimer = t + 0.5;
+      }
+    }
 </script>
 
 </body>
