@@ -175,7 +175,7 @@ var GameScene = new Phaser.Class({
       gCoupe.bliplines=[];
       gCoupe.contacts=[]
       gCoupe.pA=0;
-      gCoupe.pW=pi; // +/- 0..pi
+      gCoupe.pW=pi/2; // +/- 0..pi
       gCoupe.mCount=5;
       cam.startFollow(gCoupe);
       gCoupe.name = 'gCoupe';
@@ -239,10 +239,30 @@ var GameScene = new Phaser.Class({
       starfield.setOrigin(0,0);
       starfield.setScrollFactor(0);
 
-      tX = this.add.text(0,10,'X: ' + gCoupe.x);
+/*
+      txt = "\n\
+      Keys:\n\
+      WASD : 8-directional ship orientation and acceleration\n\
+      Arrow Keys : Accelerate relative to enemy ship (omniscient)\n\
+      X: killTangentialVelocity relative to enemy ship\n\
+      Z: Decelerate\n\
+      \n\
+      Q/E : Decrease/Increase directional Ping Angle\n\
+      Mouse move: aim Ping direction\n\
+      P/Mouse1 : Send Ping\n\
+      \n\
+      T : Tab between targets\n\
+      Space : Fire missile at target\n\
+      \n\
+      +/- : Change zoom\n\
+      R : Reset Coupe to origin";
+      tX = this.add.text(0,0,txt);
+      tX.setScale(1);
       tX.fixedToCamera=true;
       tX.setScrollFactor(0,0);
-
+      camL.ignore(tX);
+      camR.ignore(tX);
+*/
 
     }, //create end
 
@@ -1019,6 +1039,7 @@ let game = new Phaser.Game(config)
 
 </script>
 
+<p>
 Keys:
 WASD : 8-directional ship orientation and acceleration
 Arrow Keys : Accelerate relative to enemy ship (omniscient)
@@ -1034,6 +1055,6 @@ Space : Fire missile at target
 
 +/- : Change zoom
 R : Reset Coupe to origin
-
+</p>
 </body>
 </html>
