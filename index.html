@@ -37,11 +37,14 @@
   var mouseText;
   var mapEdge = 1000; //max x and y and negative for mins
   var aMissile;
-  var pointer;
+  var pointer1;
+  var pointer2;
   var td = false;
   var accX;
   var accY;
   var gameSpeed = 5;
+  var touchx;
+  var touchy;
 } //GLOBAL initialize
 
 var MenuScene = new Phaser.Class({
@@ -70,7 +73,6 @@ var GameScene = new Phaser.Class({
       Phaser.Scene.call(this, { key: 'GameScene' });
   },
 
-
     preload: function ()
     {
       this.load.image('coupe', 'coupe.png');
@@ -79,14 +81,28 @@ var GameScene = new Phaser.Class({
       this.load.image('starbg', 'starbg.png');
       this.load.image('missile', 'missile.png');
       this.load.spritesheet('asplode', 'splode.png',{frameWidth: 32, frameHeight: 32, endFrame: 2 });
-
+      this.load.image('AngleMinusDown','AngleMinusDown.png');
+      this.load.image('AngleMinusUp','AngleMinusUp.png');
+      this.load.image('AnglePlusDown','AnglePlusDown.png');
+      this.load.image('AnglePlusUp','AnglePlusUp.png');
+      this.load.image('ZoomMinusDown','ZoomMinusDown.png');
+      this.load.image('ZoomMinusUp','ZoomMinusUp.png');
+      this.load.image('ZoomPlusDown','ZoomPlusDown.png');
+      this.load.image('ZoomPlusUp','ZoomPlusUp.png');
+      this.load.image('FireDown','FireDown.png');
+      this.load.image('FireUp','FireUp.png');
+      this.load.image('TargetDown','TargetDown.png');
+      this.load.image('TargetUp','TargetUp.png');
+      this.load.image('PingDown','PingDown.png');
+      this.load.image('PingUp','PingUp.png');
+      this.load.image('MoveTop','MoveTop.png');
+      this.load.image('MoveBottom','MoveBottom.png');
+      this.load.image('PingTop','PingTop.png');
+      this.load.image('PingBottom','PingBottom.png');
     },
 
     create: function ()
     {
-
-
-
       var config = {
         key: 'explode',
         frames: this.anims.generateFrameNumbers('asplode', { start: 0, end: 2, first: 0 }),
@@ -121,7 +137,8 @@ var GameScene = new Phaser.Class({
       PLUSKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PLUS);
       MINUSKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.MINUS);
 }
-      pointer = this.input.activePointer;
+      pointer1 = this.input.activePointer;
+      this.input.addPointer();
       accX=0;
       accY=0;
 
@@ -137,23 +154,39 @@ var GameScene = new Phaser.Class({
       camL.setScroll(-2*mapEdge,0);
       menuPanel = new Phaser.Geom.Rectangle(-2*mapEdge,0,200,120);
       pingPanel = new Phaser.Geom.Rectangle(-2*mapEdge,120,170,200);
-      pingAMinus = new Phaser.Geom.Rectangle(-2*mapEdge+10,130,70,60);
-      pingAPlus = new Phaser.Geom.Rectangle(-2*mapEdge+90,130,70,60);
-      pingButton = new Phaser.Geom.Rectangle(-2*mapEdge+10,200,150,110);
-      accelCircle1 = new Phaser.Geom.Circle(-2*mapEdge+105,435,105);
-      accelCircle2 = new Phaser.Geom.Circle(-2*mapEdge+105,435,90);
+      AngleMinusUp = this.add.image(-2*mapEdge+45,160,'AngleMinusUp');
+      AngleMinusDown = this.add.image(-2*mapEdge+45,160,'AngleMinusDown');
+      AngleMinusDown.visible = false;
+      AnglePlusUp = this.add.image(-2*mapEdge+125,160,'AnglePlusUp');
+      AnglePlusDown = this.add.image(-2*mapEdge+125,160,'AnglePlusDown');
+      AnglePlusDown.visible = false;
+      PingUp = this.add.image(-2*mapEdge+85,265,'PingUp');
+      PingDown = this.add.image(-2*mapEdge+85,265,'PingDown');
+      PingDown.visible = false;
+      MoveBottom = this.add.image(-2*mapEdge+105,435,'MoveBottom');
+      MoveTop = this.add.image(-2*mapEdge+105,435,'MoveTop');
 
       camR = this.cameras.add();
       camR.setViewport(750, 0, 210, 540);
       camR.setScroll(2*mapEdge,0);
       resPanel = new Phaser.Geom.Rectangle(2*mapEdge+20,0,200,120);
       targetPanel = new Phaser.Geom.Rectangle(2*mapEdge+40,120,170,200);
-      zoomMinusButton = new Phaser.Geom.Rectangle(2*mapEdge+50,130,70,60);
-      zoomPlusButton = new Phaser.Geom.Rectangle(2*mapEdge+130,130,70,60);
-      targetButton = new Phaser.Geom.Rectangle(2*mapEdge+50,200,70,110);
-      fireButton = new Phaser.Geom.Rectangle(2*mapEdge+130,200,70,110);
-      pingCircle1 = new Phaser.Geom.Circle(2*mapEdge+105,435,105);
-      pingCircle2 = new Phaser.Geom.Circle(2*mapEdge+105,435,90);
+      ZoomMinusUp = this.add.image(2*mapEdge+85,160,'ZoomMinusUp');
+      ZoomMinusDown = this.add.image(2*mapEdge+85,160,'ZoomMinusDown');
+      ZoomMinusDown.visible = false;
+      ZoomPlusUp = this.add.image(2*mapEdge+165,160,'ZoomPlusUp');
+      ZoomPlusDown = this.add.image(2*mapEdge+165,160,'ZoomPlusDown');
+      ZoomPlusDown.visible = false;
+
+      TargetUp = this.add.image(2*mapEdge+85,265,'TargetUp');
+      TargetDown = this.add.image(2*mapEdge+85,265,'TargetDown');
+      TargetDown.visible = false;
+      FireUp = this.add.image(2*mapEdge+165,265,'FireUp');
+      FireDown = this.add.image(2*mapEdge+165,265,'FireDown');
+      FireDown.visible = false;
+      PingBottom = this.add.image(2*mapEdge+105,435,'PingBottom');
+      PingTop = this.add.image(2*mapEdge+105,435,'PingTop');
+
 
 { //gCoupe construction
       gCoupe = this.add.image(0,0, 'coupe')
@@ -256,13 +289,14 @@ var GameScene = new Phaser.Class({
       \n\
       +/- : Change zoom\n\
       R : Reset Coupe to origin";
-      tX = this.add.text(0,0,txt);
+*/
+      tX = this.add.text(0,0,touchx + ", " + touchy);
       tX.setScale(1);
       tX.fixedToCamera=true;
       tX.setScrollFactor(0,0);
       camL.ignore(tX);
       camR.ignore(tX);
-*/
+
 
     }, //create end
 
@@ -284,9 +318,25 @@ var GameScene = new Phaser.Class({
         rCoupe.pReady = true;
 
       if (PLUSKey.isDown) // to zoom in
+      {
         zoom*=1.02;
+        ZoomPlusUp.visible=false;
+        ZoomPlusDown.visible=true;
+      } else {
+        ZoomPlusUp.visible=true;
+        ZoomPlusDown.visible=false;
+      }
+
       if (MINUSKey.isDown) // to zoom out
+      {
         zoom/=1.02;
+        ZoomMinusUp.visible=false;
+        ZoomMinusDown.visible=true;
+      } else {
+        ZoomMinusUp.visible=true;
+        ZoomMinusDown.visible=false;
+
+      }
       if (zoom>3.0) zoom=3.0;
       if (zoom<0.5) zoom=0.5;
       cam.setZoom(zoom);
@@ -303,46 +353,85 @@ var GameScene = new Phaser.Class({
         gCoupe.rotation = Math.atan2(accY,(accX+0.001))+pi/2;
         accelerateObject(gCoupe);
       }
-      accelCircle2.x=-2*mapEdge+105+15*accX;
-      accelCircle2.y=435+15*accY;
+      MoveTop.x=-2*mapEdge+105+15*accX;
+      MoveTop.y=435+15*accY;
 
       if (TKey.isDown) //magically rotate gCoupe toward rCoupe
         {
           td = true;
+          TargetDown.visible = true;
+          TargetUp.visible = false;
         } else {
           if (td) //TKey.release
           {
             nextTarget(gCoupe);
             td=false;
+            TargetDown.visible = false;
+            TargetUp.visible = true;
+
           }
         }
 
-      if ((pointer.isDown)||(PKey.isDown)) //send ping from gCoupe
+      if (pointer1.isDown) //send ping from gCoupe
         {
           ping(gCoupe);
+          touchx=pointer1.x;
+          touchy=pointer1.y;
+          tX.setText(Math.round(touchx) + ", " + Math.round(touchy));
+          PingDown.visible = true;
+          PingUp.visible = false;
+        } else {
+          PingDown.visible = false;
+          PingUp.visible = true;
         }
-      if (keys.space.isDown) //fire a missile
-        if (gCoupe.mReady)
+
+      if (PKey.isDown) //send ping from gCoupe
         {
+          ping(gCoupe);
+          PingDown.visible = true;
+          PingUp.visible = false;
+        } else {
+          PingDown.visible = false;
+          PingUp.visible = true;
+        }
+
+      if (keys.space.isDown) //fire a missile
+      {
+        FireDown.visible = true;
+        FireUp.visible = false;
+        if (gCoupe.mReady)
           fireMissile(gCoupe,gCoupe.target);
+      } else {
+        FireDown.visible = false;
+        FireUp.visible = true;
         }
 
       if (QKey.isDown) //accelerate gCoupe toward rCoupe
         {
+          AngleMinusDown.visible = true;
+          AngleMinusUp.visible = false;
           gCoupe.pW-=0.02;
           if (gCoupe.pW>pi/2)
             gCoupe.pW-=0.02; //do it faster when filling
           if (gCoupe.pW<pi/12)
             gCoupe.pW=pi/12;
+        } else {
+          AngleMinusDown.visible = false;
+          AngleMinusUp.visible = true;
         }
       if (EKey.isDown) //accelerate gCoupe toward rCoupe
         {
+          AnglePlusDown.visible = true;
+          AnglePlusUp.visible = false;
           gCoupe.pW+=0.02;
           if (gCoupe.pW>pi/2)
             gCoupe.pW+=0.02; //do it faster when filling
           if (gCoupe.pW>pi)
             gCoupe.pW=pi;
-        }
+          } else {
+            AnglePlusDown.visible = false;
+            AnglePlusUp.visible = true;
+          }
 
       if (keys.up.isDown) //accelerate gCoupe toward rCoupe
         {
@@ -647,8 +736,8 @@ var GameScene = new Phaser.Class({
       my = game.input.mousePointer.y-270+cam.midPoint.y;
       ma = Math.atan2(my-gCoupe.y,mx-gCoupe.x);
       gCoupe.pA = ma;
-      pingCircle2.x = 2*mapEdge+105+15*Math.cos(ma);
-      pingCircle2.y = 435+15*Math.sin(ma);
+      PingTop.x = 2*mapEdge+105+15*Math.cos(ma);
+      PingTop.y = 435+15*Math.sin(ma);
 
       graphics.lineStyle(1, 0xA0A000);
       graphics.beginPath();
@@ -989,22 +1078,20 @@ var GameScene = new Phaser.Class({
       }
     }
 
+    function accelTap()
+    {
+      touchx = pointer1.x;
+      touchy = pointer1.y;
+      MoveTop.x = -2*mapEdge+105;
+      MoveTop.y = 435;
+    }
+
     function drawLeft()
     {
       graphics.fillStyle(0x0000E0, 0.1);
       graphics.fillRectShape(menuPanel);
       graphics.fillStyle(0xFFC080, 0.1);
       graphics.fillRectShape(pingPanel);
-      graphics.fillStyle(0x000000, 0.5);
-      graphics.fillRectShape(pingAMinus);
-      graphics.fillStyle(0x000000, 0.5);
-      graphics.fillRectShape(pingAPlus);
-      graphics.fillStyle(0xFFFFA0, 0.2);
-      graphics.fillRectShape(pingButton);
-      graphics.fillStyle(0xFFA0A0, 0.1);
-      graphics.fillCircleShape(accelCircle1);
-      graphics.fillStyle(0xD00000, 0.2);
-      graphics.fillCircleShape(accelCircle2);
     }
 
     function drawRight()
@@ -1013,18 +1100,6 @@ var GameScene = new Phaser.Class({
       graphics.fillRectShape(resPanel);
       graphics.fillStyle(0xDD80FF, 0.1);
       graphics.fillRectShape(targetPanel);
-      graphics.fillStyle(0x000000, 0.5);
-      graphics.fillRectShape(zoomMinusButton);
-      graphics.fillStyle(0x000000, 0.5);
-      graphics.fillRectShape(zoomPlusButton);
-      graphics.fillStyle(0x000000, 0.5);
-      graphics.fillRectShape(targetButton);
-      graphics.fillStyle(0xFF80FF, 0.5);
-      graphics.fillRectShape(fireButton);
-      graphics.fillStyle(0xFFFF80, 0.1);
-      graphics.fillCircleShape(pingCircle1);
-      graphics.fillStyle(0xCCCC00, 0.1);
-      graphics.fillCircleShape(pingCircle2);
     }
 
     let config = {
@@ -1040,21 +1115,21 @@ let game = new Phaser.Game(config)
 </script>
 
 <p>
-Keys:
-WASD : 8-directional ship orientation and acceleration
-Arrow Keys : Accelerate relative to enemy ship (omniscient)
-X: killTangentialVelocity relative to enemy ship
-Z: Decelerate
+<font color = "yellow">
+WASD : 8-directional ship orientation and acceleration<br>
+Arrow Keys : Accelerate relative to enemy ship (omniscient)<br>
+X: killTangentialVelocity relative to enemy ship<br>
+Z: Decelerate<br>
 
-Q/E : Decrease/Increase directional Ping Angle
-Mouse move: aim Ping direction
-P/Mouse1 : Send Ping
+Q/E : Decrease/Increase directional Ping Angle<br>
+Mouse move: aim Ping direction<br>
+P/Mouse1 : Send Ping<br>
 
-T : Tab between targets
-Space : Fire missile at target
+T : Tab between targets<br>
+Space : Fire missile at target<br>
 
-+/- : Change zoom
-R : Reset Coupe to origin
++/- : Change zoom<br>
+R : Reset Coupe to origin<br>
 </p>
 </body>
 </html>
