@@ -154,16 +154,43 @@ var GameScene = new Phaser.Class({
       camL.setScroll(-2*mapEdge,0);
       menuPanel = new Phaser.Geom.Rectangle(-2*mapEdge,0,200,120);
       pingPanel = new Phaser.Geom.Rectangle(-2*mapEdge,120,170,200);
+
       AngleMinusUp = this.add.image(-2*mapEdge+45,160,'AngleMinusUp');
+      AngleMinusUp.inputEnabled = true;
+      AngleMinusUp.on('pointerdown', () => {
+        gCoupe.pW-=0.02;
+        if (gCoupe.pW>pi/2)
+          gCoupe.pW-=0.02; //do it faster when filling
+        if (gCoupe.pW<pi/12)
+          gCoupe.pW=pi/12;
+      });
       AngleMinusDown = this.add.image(-2*mapEdge+45,160,'AngleMinusDown');
       AngleMinusDown.visible = false;
+
       AnglePlusUp = this.add.image(-2*mapEdge+125,160,'AnglePlusUp');
-      AnglePlusDown = this.add.image(-2*mapEdge+125,160,'AnglePlusDown');
+      AnglePlusUp.inputEnabled = true;
+      AnglePlusUp.on('pointerdown', () => {
+        gCoupe.pW+=0.02;
+        if (gCoupe.pW>pi/2)
+          gCoupe.pW+=0.02; //do it faster when filling
+        if (gCoupe.pW>pi)
+          gCoupe.pW=pi;
+      });      AnglePlusDown = this.add.image(-2*mapEdge+125,160,'AnglePlusDown');
       AnglePlusDown.visible = false;
+
       PingUp = this.add.image(-2*mapEdge+85,265,'PingUp');
+      PingUp.inputEnabled = true;
+      PingUp.on('pointerup', () => { ping(gCoupe) });
       PingDown = this.add.image(-2*mapEdge+85,265,'PingDown');
       PingDown.visible = false;
+
       MoveBottom = this.add.image(-2*mapEdge+105,435,'MoveBottom');
+      MoveBottom.inputEnabled = true;
+      MoveBottom.on('pointerdown', () => {
+        mx = game.input.mousePointer.x-105+cam.midpoint.x;
+        my = game.input.mousePointer.y-435+cam.midPoint.y;
+        ma = Math.atan2(my-gCoupe.y,mx-gCoupe.x);
+        gCoupe.pA = ma; });
       MoveTop = this.add.image(-2*mapEdge+105,435,'MoveTop');
 
       camR = this.cameras.add();
@@ -172,19 +199,36 @@ var GameScene = new Phaser.Class({
       resPanel = new Phaser.Geom.Rectangle(2*mapEdge+20,0,200,120);
       targetPanel = new Phaser.Geom.Rectangle(2*mapEdge+40,120,170,200);
       ZoomMinusUp = this.add.image(2*mapEdge+85,160,'ZoomMinusUp');
+      ZoomMinusUp.inputEnabled = true;
+      ZoomMinusUp.on('pointerdown', () => { zoom/=1.02; if (zoom<0.5) zoom=0.5});
       ZoomMinusDown = this.add.image(2*mapEdge+85,160,'ZoomMinusDown');
       ZoomMinusDown.visible = false;
+
       ZoomPlusUp = this.add.image(2*mapEdge+165,160,'ZoomPlusUp');
+      ZoomPlusUp.inputEnabled = true;
+      ZoomPlusUp.on('pointerdown', () => { zoom*=1.02; if (zoom>3.0) zoom=3.0});
       ZoomPlusDown = this.add.image(2*mapEdge+165,160,'ZoomPlusDown');
       ZoomPlusDown.visible = false;
 
       TargetUp = this.add.image(2*mapEdge+85,265,'TargetUp');
+      TargetUp.inputEnabled = true;
+      TargetUp.on('pointerup', () => { nextTarget(gCoupe) });
       TargetDown = this.add.image(2*mapEdge+85,265,'TargetDown');
       TargetDown.visible = false;
+
       FireUp = this.add.image(2*mapEdge+165,265,'FireUp');
+      FireUp.inputEnabled = true;
+      FireUp.on('pointerdown', () => { if (gCoupe.mReady) fireMissile(gCoupe,gCoupe.target); });
       FireDown = this.add.image(2*mapEdge+165,265,'FireDown');
       FireDown.visible = false;
+
       PingBottom = this.add.image(2*mapEdge+105,435,'PingBottom');
+      PingBottom.inputEnabled = true;
+      PingBottom.on('pointerdown', () => {
+        mx = game.input.mousePointer.x-855+cam.midpoint.x;
+        my = game.input.mousePointer.y-435+cam.midPoint.y;
+        ma = Math.atan2(my-gCoupe.y,mx-gCoupe.x);
+        gCoupe.pA = ma; });
       PingTop = this.add.image(2*mapEdge+105,435,'PingTop');
 
 
@@ -356,7 +400,7 @@ var GameScene = new Phaser.Class({
       MoveTop.x=-2*mapEdge+105+15*accX;
       MoveTop.y=435+15*accY;
 
-      if (TKey.isDown) //magically rotate gCoupe toward rCoupe
+      if (TKey.isDown) //select next target
         {
           td = true;
           TargetDown.visible = true;
