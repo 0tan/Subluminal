@@ -162,31 +162,33 @@ var GameScene = new Phaser.Class({
       AngleMinusUp.setInteractive();
       AngleMinusDown = this.add.sprite(-2*mapEdge+45,160,'AngleMinusDown');
       AngleMinusDown.visible = false;
-      AngleMinusUp.on('pointerdown', () => {bAM=true});
-      AngleMinusUp.on('pointerup', () => {bAM=false});
-      AngleMinusUp.on('pointerout', () => {bAM=false});
+      AngleMinusUp.on('pointerdown', () => {bAM=true; AngleMinusDown.visible = true; AngleMinusUp.visible = false;});
+      AngleMinusUp.on('pointerup', () => {bAM=false; AngleMinusUp.visible = true; AngleMinusDown.visible = false;});
+      AngleMinusUp.on('pointerout', () => {bAM=false; AngleMinusUp.visible = true; AngleMinusDown.visible = false;});
 
       AnglePlusUp = this.add.image(-2*mapEdge+125,160,'AnglePlusUp');
       AnglePlusUp.setInteractive();
-      AnglePlusUp.on('pointerdown', () => {bAP=true});
-      AnglePlusUp.on('pointerup', () => {bAP=false});
-      AnglePlusUp.on('pointerout', () => {bAP=false});
       AnglePlusDown = this.add.sprite(-2*mapEdge+125,160,'AnglePlusDown');
       AnglePlusDown.visible = false;
+      AnglePlusUp.on('pointerdown', () => {bAP=true; AnglePlusDown.visible = true; AnglePlusUp.visible = false;});
+      AnglePlusUp.on('pointerup', () => {bAP=false; AnglePlusUp.visible = true; AnglePlusDown.visible = false;});
+      AnglePlusUp.on('pointerout', () => {bAP=false; AnglePlusUp.visible = true; AnglePlusDown.visible = false;});
 
       PingUp = this.add.sprite(-2*mapEdge+85,265,'PingUp');
       PingUp.setInteractive();
-      PingUp.on('pointerdown', () => { ping(gCoupe) });
       PingDown = this.add.sprite(-2*mapEdge+85,265,'PingDown');
       PingDown.visible = false;
+      PingUp.on('pointerdown', () => { ping(gCoupe); PingDown.visible = true; PingUp.visible = false; });
+      PingUp.on('pointerdown', () => { ping(gCoupe); PingDown.visible = false; PingUp.visible = true; });
+      PingUp.on('pointerdown', () => { ping(gCoupe); PingDown.visible = false; PingUp.visible = true; });
 
       MoveBottom = this.add.sprite(-2*mapEdge+105,435,'MoveBottom');
       MoveBottom.setInteractive();
+      MoveTop = this.add.sprite(-2*mapEdge+105,435,'MoveTop');
       MoveBottom.on('pointerdown', () => {bMD=true});
       MoveBottom.on('pointerover', () => {bM=true});
-      MoveBottom.on('pointerup', () => {bM=false;bMD=false});
+      MoveBottom.on('pointerup', () => {bMD=false});
       MoveBottom.on('pointerout', () => {bM=false;bMD=false});
-      MoveTop = this.add.sprite(-2*mapEdge+105,435,'MoveTop');
 
       camR = this.cameras.add();
       camR.setViewport(750, 0, 210, 540);
@@ -196,38 +198,41 @@ var GameScene = new Phaser.Class({
 
       ZoomMinusUp = this.add.sprite(2*mapEdge+85,160,'ZoomMinusUp');
       ZoomMinusUp.setInteractive();
-      ZoomMinusUp.on('pointerdown', () => {bZM=true});
-      ZoomMinusUp.on('pointerup', () => {bZM=false});
-      ZoomMinusUp.on('pointerout', () => {bZM=false});
       ZoomMinusDown = this.add.sprite(2*mapEdge+85,160,'ZoomMinusDown');
       ZoomMinusDown.visible = false;
+      ZoomMinusUp.on('pointerdown', () => {bZM=true; ZoomMinusDown.visible = true; ZoomMinusUp.visible = false;});
+      ZoomMinusUp.on('pointerup', () => {bZM=false; ZoomMinusUp.visible = true; ZoomMinusDown.visible = false;});
+      ZoomMinusUp.on('pointerout', () => {bZM=false; ZoomMinusUp.visible = true; ZoomMinusDown.visible = false;});
 
       ZoomPlusUp = this.add.sprite(2*mapEdge+165,160,'ZoomPlusUp');
       ZoomPlusUp.setInteractive();
-      ZoomPlusUp.on('pointerdown', () => {bZP=true});
-      ZoomPlusUp.on('pointerup', () => {bZP=false});
-      ZoomPlusUp.on('pointerout', () => {bZP=false});
       ZoomPlusDown = this.add.sprite(2*mapEdge+165,160,'ZoomPlusDown');
       ZoomPlusDown.visible = false;
+      ZoomPlusUp.on('pointerdown', () => {bZP=true; ZoomPlusDown.visible = true; ZoomPlusUp.visible = false;});
+      ZoomPlusUp.on('pointerup', () => {bZP=false; ZoomPlusUp.visible = true; ZoomPlusDown.visible = false;});
+      ZoomPlusUp.on('pointerout', () => {bZP=false; ZoomPlusUp.visible = true; ZoomPlusDown.visible = false;});
 
       TargetUp = this.add.sprite(2*mapEdge+85,265,'TargetUp');
       TargetUp.setInteractive();
-      TargetUp.on('pointerdown', () => { nextTarget(gCoupe) });
       TargetDown = this.add.sprite(2*mapEdge+85,265,'TargetDown');
       TargetDown.visible = false;
+      TargetUp.on('pointerdown', () => { nextTarget(gCoupe); TargetDown.visible = true; TargetUp.visible = false; });
+      TargetUp.on('pointerup', () => { TargetUp.visible = true; TargetDown.visible = false; });
+      TargetUp.on('pointerout', () => { TargetUp.visible = true; TargetDown.visible = false; });
 
       FireUp = this.add.sprite(2*mapEdge+165,265,'FireUp');
       FireUp.setInteractive();
-      FireUp.on('pointerdown', () => { if (gCoupe.mReady) fireMissile(gCoupe,gCoupe.target); });
       FireDown = this.add.sprite(2*mapEdge+165,265,'FireDown');
       FireDown.visible = false;
+      FireUp.on('pointerdown', () => { if (gCoupe.mReady) fireMissile(gCoupe,gCoupe.target); FireDown.visible = true; FireUp.visible = false; });
+      FireUp.on('pointerup', () => { FireUp.visible = true; FireDown.visible = false; });
+      FireUp.on('pointerout', () => { FireUp.visible = true; FireDown.visible = false; });
 
       PingBottom = this.add.sprite(2*mapEdge+105,435,'PingBottom');
       PingBottom.setInteractive();
-      PingBottom.on('pointerover', () => {bPB=true});
-      PingBottom.on('pointerup', () => {bPB=false});
-      PingBottom.on('pointerout', () => {bPB=false});
       PingTop = this.add.sprite(2*mapEdge+105,435,'PingTop');
+      PingBottom.on('pointerover', () => {bPB=true});
+      PingBottom.on('pointerout', () => {bPB=false});
 
 
 { //gCoupe construction
@@ -547,7 +552,18 @@ var GameScene = new Phaser.Class({
 
       if (bM)
       {
-        ma = Math.atan2(p1.y-435,p1.x-105);
+        ppx=-mapEdge;
+        ppy=-mapEdge;
+        if ((Math.abs(p1.x-105)<105)&&(Math.abs(p1.y-435)<105)) {
+          ppx=p1.x;
+          ppy=p1.y;
+        }
+        if ((Math.abs(p2.x-105)<105)&&(Math.abs(p2.y-435)<105)) {
+          ppx=p2.x;
+          ppy=p2.y;
+        }
+
+        ma = Math.atan2(ppy-435,ppx-105);
         MoveTop.x = MoveBottom.x+15*Math.cos(ma);
         MoveTop.y = MoveBottom.y+15*Math.sin(ma);
         if (bMD) {
@@ -569,11 +585,21 @@ var GameScene = new Phaser.Class({
 
       if (bPB)
       {
-        gCoupe.pA = Math.atan2(p1.y-435,p1.x-855);
+        ppx=-mapEdge;
+        ppy=-mapEdge;
+        if ((Math.abs(p1.x-855)<105)&&(Math.abs(p1.y-435)<105)) {
+          ppx=p1.x;
+          ppy=p1.y;
+        }
+        if ((Math.abs(p2.x-855)<105)&&(Math.abs(p2.y-435)<105)) {
+          ppx=p2.x;
+          ppy=p2.y;
+        }
+        gCoupe.pA = Math.atan2(ppy-435,ppx-855);
         PingTop.x = PingBottom.x+15*Math.cos(gCoupe.pA);
         PingTop.y = PingBottom.y+15*Math.sin(gCoupe.pA);
-
       }
+
       graphics.clear();
 
       for (i=0; i<(mapEdge/100); i++) { //draw grid
