@@ -166,7 +166,7 @@ var GameScene = new Phaser.Class({
       AngleMinusUp.on('pointerup', () => {bAM=false; AngleMinusUp.visible = true; AngleMinusDown.visible = false;});
       AngleMinusUp.on('pointerout', () => {bAM=false; AngleMinusUp.visible = true; AngleMinusDown.visible = false;});
 
-      AnglePlusUp = this.add.image(-2*mapEdge+125,160,'AnglePlusUp');
+      AnglePlusUp = this.add.sprite(-2*mapEdge+125,160,'AnglePlusUp');
       AnglePlusUp.setInteractive();
       AnglePlusDown = this.add.sprite(-2*mapEdge+125,160,'AnglePlusDown');
       AnglePlusDown.visible = false;
@@ -185,7 +185,7 @@ var GameScene = new Phaser.Class({
       MoveBottom = this.add.sprite(-2*mapEdge+105,435,'MoveBottom');
       MoveBottom.setInteractive();
       MoveTop = this.add.sprite(-2*mapEdge+105,435,'MoveTop');
-      MoveBottom.on('pointerdown', () => {bMD=true});
+      MoveBottom.on('pointerdown', () => {bMD=true;bM=true});
       MoveBottom.on('pointerover', () => {bM=true});
       MoveBottom.on('pointerup', () => {bMD=false});
       MoveBottom.on('pointerout', () => {bM=false;bMD=false});
@@ -425,9 +425,6 @@ var GameScene = new Phaser.Class({
       if (p1.isDown) //send ping from gCoupe
         {
           ping(gCoupe);
-          touchx=p1.x;
-          touchy=p1.y;
-          tX.setText(Math.round(touchx) + ", " + Math.round(touchy));
           PingDown.visible = true;
           PingUp.visible = false;
         } else {
@@ -564,6 +561,7 @@ var GameScene = new Phaser.Class({
         }
 
         ma = Math.atan2(ppy-435,ppx-105);
+        tX.setText(Math.round(ppx) + ", " + Math.round(ppy));
         MoveTop.x = MoveBottom.x+15*Math.cos(ma);
         MoveTop.y = MoveBottom.y+15*Math.sin(ma);
         if (bMD) {
@@ -595,6 +593,7 @@ var GameScene = new Phaser.Class({
           ppx=p2.x;
           ppy=p2.y;
         }
+        tX.setText(Math.round(ppx) + ", " + Math.round(ppy));
         gCoupe.pA = Math.atan2(ppy-435,ppx-855);
         PingTop.x = PingBottom.x+15*Math.cos(gCoupe.pA);
         PingTop.y = PingBottom.y+15*Math.sin(gCoupe.pA);
