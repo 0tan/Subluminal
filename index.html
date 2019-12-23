@@ -569,9 +569,10 @@ var GameScene = new Phaser.Class({
 
       if (bPB)
       {
-        pA = Math.atan2(p1.y-435,p1.x-855);
-        PingTop.x = PingBottom.x+15*Math.cos(pA);
-        PingTop.y = PingBottom.y+15*Math.sin(pA);
+        gCoupe.pA = Math.atan2(p1.y-435,p1.x-855);
+        PingTop.x = PingBottom.x+15*Math.cos(gCoupe.pA);
+        PingTop.y = PingBottom.y+15*Math.sin(gCoupe.pA);
+
       }
       graphics.clear();
 
@@ -821,11 +822,11 @@ var GameScene = new Phaser.Class({
       gCoupe.x+=dt*gCoupe.vx;
       gCoupe.y+=dt*gCoupe.vy;
 
-      mx = game.input.mousePointer.x-480+cam.midPoint.x; //don't forget the camera scroll
-      my = game.input.mousePointer.y-270+cam.midPoint.y;
-      ma = Math.atan2(my-gCoupe.y,mx-gCoupe.x);
-      gCoupe.pA = ma;
       if (!bPB){
+        mx = game.input.mousePointer.x-480+cam.midPoint.x; //don't forget the camera scroll
+        my = game.input.mousePointer.y-270+cam.midPoint.y;
+        ma = Math.atan2(my-gCoupe.y,mx-gCoupe.x);
+        gCoupe.pA = ma;
         PingTop.x = 2*mapEdge+105+15*Math.cos(ma);
         PingTop.y = 435+15*Math.sin(ma);
       }
