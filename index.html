@@ -561,7 +561,7 @@ var GameScene = new Phaser.Class({
         }
 
         ma = Math.atan2(ppy-435,ppx-105);
-        tX.setText(Math.round(ppx) + ", " + Math.round(ppy));
+        tX.setText(Math.round(this.input.x) + ", " + Math.round(this.input.y));
         MoveTop.x = MoveBottom.x+15*Math.cos(ma);
         MoveTop.y = MoveBottom.y+15*Math.sin(ma);
         if (bMD) {
